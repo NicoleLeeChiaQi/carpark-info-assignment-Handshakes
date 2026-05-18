@@ -133,3 +133,4 @@
 /home/nicole_lee/Handshakes Assignments/backend-Handshakes/CarParkAPI/obj/Debug/net8.0/CarParkAPI.pdb
 /home/nicole_lee/Handshakes Assignments/backend-Handshakes/CarParkAPI/obj/Debug/net8.0/CarParkAPI.genruntimeconfig.cache
 /home/nicole_lee/Handshakes Assignments/backend-Handshakes/CarParkAPI/obj/Debug/net8.0/ref/CarParkAPI.dll
+/home/nicole_lee/Handshakes Assignments/backend-Handshakes/CarParkAPI/obj/Debug/net8.0/CarParkAPI.sourcelink.json
