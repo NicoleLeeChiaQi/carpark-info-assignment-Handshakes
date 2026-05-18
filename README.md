@@ -1,53 +1,88 @@
-# Carpark-Info
-A take-home coding assignment for backend developer interview. 
+# Carpark Information API
 
-## Your Task
-1. Given the CSV dataset (hdb-carpark-information-<timestamp>.csv) that contains details of a list of carparks, design the database to store the given information in the dataset and to support the below given user stories. ER diagram should be provided.
-2. Write a batch job that will process and store the information into the database of your choice. This is a daily delta file that will be interfaced over from source. In the event there is an error processing the records in the file, the entire file should rollback.
-3. Write the APIs that will fulfill the below given user stories. Swagger documentation should be provided. No front-end screens are required to be developed - just the APIs. However, you should be prepared to articulate how the APIs are envisoned to be utilised by the front-end developer. :)
+This repository contains a .NET 8 Web API designed to manage and query HDB carpark information. The solution is built as a take-home assignment, focusing on backend development principles including database design, batch data processing, and API development.
 
-### User Stories
-* As a user, I want to be able to filter the list of carpark by the following criteria:
-  - Carpark that offer free parking
-  - Carpark that offer night parking
-  - Carpark that can meet my vehicle height requirement.
-* As a user, I want to be able to add a specific carpark as my favourite.
+The application processes a CSV file containing carpark data, stores it in a normalized SQLite database, and exposes RESTful endpoints for filtering carparks and managing user favorites.
+
+## Tech Stack
+
+*   **.NET 8:** The underlying framework for the application.
+*   **ASP.NET Core Web API:** For building the RESTful API endpoints.
+*   **Entity Framework Core:** As the Object-Relational Mapper (ORM) for database interactions.
+*   **SQLite:** A lightweight, serverless, file-based database for data persistence.
+*   **CsvHelper:** A library for reading and processing the input CSV data.
+*   **Swagger (OpenAPI):** For interactive API documentation and testing.
+
+## Database Schema
+
+The database is designed with normalization in mind to reduce redundancy and improve data integrity.
+
+*   `CarParks`: The central table storing essential carpark details like `car_park_no`, `address`, coordinates, number of decks, gantry height, and basement information. It serves as the primary entity.
+*   `ParkingPolicy`: A one-to-one relationship with `CarParks`, holding policy details such as `short_term_parking`, `free_parking`, and `night_parking` availability.
+*   `CarParkType`: A lookup table for different carpark types (e.g., "MULTI-STOREY CAR PARK", "BASEMENT CAR PARK").
+*   `ParkingSystem`: A lookup table for parking system types (e.g., "ELECTRONIC PARKING", "COUPON PARKING").
+*   `UserFavorite`: A table to manage the many-to-many relationship between users and their favorite carparks, linking a `UserId` to a `CarParkNo`.
+
+Indexes have been added to columns frequently used in filtering (`GantryHeight`, `FreeParking`, `OffersNightParking`) to optimize query performance.
+
+## Features
+
+*   **Transactional Batch CSV Import:** An atomic, transactional batch service that processes a delta CSV file. It performs an "upsert" operation: new carparks are added, and existing ones are updated. If any record fails during processing, the entire transaction is rolled back to maintain data consistency.
+*   **Carpark Filtering API:** A flexible endpoint that allows users to find carparks based on various criteria:
+    *   Availability of free parking.
+    *   Availability of night parking.
+    *   Vehicle height requirements (gantry height).
+*   **User Favorites:** An endpoint enabling users to save and manage a list of their favorite carparks.
 
 ## Getting Started
-Please review the information in this section before you get started with your development. 
 
-* Create a personal fork of the project on Github.
-* Clone the fork on your local machine.
-* Implement your solution and the rest of git basics applies.
-* When you are ready, submit the forked repo for review by providing the link to the repo to our recruitment team.
+### Prerequisites
 
-### Tech Stack
-You may choose to develop the application using either of the following stack:
-* Spring Boot / Spring Batch with H2 database and ORM of your choice
-* .NET Core 6.x with SQLite database and ORM of your choice
-* Node.js with an in-memory database of your choice
+*   [.NET 8 SDK]
 
-Note: You are encouraged to try out .NET Core as Microsoft technologies are primarily used within the firm.
+### Setup & Run
 
-### Tools
-You are free to choose the IDE (Integrated Development Environment) tool you are most comfortable with.
+1.  **Clone the repository:**
+    git clone https://github.com/nicoleleechiaqi/carpark-info-assignment-Handshakes.git
 
-## Basic Expectation
-* Ability to design data schema, apply normalisation technique and enhance query performances, if applicable.
-* Write readable, maintainable, performant and well-documented codes.
-* Code design / architecture should support implementation of unit testing.
-* Code design / architecture should be flexible to changes / open to extensions, e.g. changing of data access technology, changing of interface file format from csv to JSON etc.
-* Write clear and concise commit message.
+2.  **Navigate to the project directory:**
+    cd carpark-info-assignment-Handshakes/CarParkAPI
 
-## Challenge Yourself
-Additional consideration to fine-tune your solution. It's not a must to implement in this assignment but please be prepared to discuss:
-* The dataset has the potential to be large in size.
-* Minimal human intervention for job recovery.
-* Secure coding practices
-* API authentication and authorisation
+3.  **Run the application:**
+    The project is configured to use Entity Framework Core migrations to set up the database schema. The `carparks.db` file is included, but you can generate it from scratch. The application will automatically create and seed the database if it doesn't exist upon startup.
+    dotnet run
 
-## Time Estimates
-This assignment should take about 2 to 4 hours of your time depending on your level of experiences. 
 
-## Need Help
-Create a github issue. We'll get back to you.
+4.  **Access the API:**
+    The API will be running on `http://localhost:5052`. You can access the interactive Swagger UI documentation to test the endpoints at:
+    [http://localhost:5052/swagger](http://localhost:5052/swagger)
+
+## API Endpoints
+
+The following endpoints are available:
+
+### Car Park Management
+
+*   **`POST /api/CarPark/import-delta`**
+    *   Imports and processes carpark data from a CSV string provided in the request body. The entire operation is transactional.
+    *   **Body (JSON):**
+        {
+          "data": "\"car_park_no\",\"address\",\"x_coord\",\"y_coord\",...\" \n\"ACB\",\"BLK 270/271 ALBERT CENTRE...\",..."
+        }
+
+*   **`GET /api/CarPark/filter`**
+    *   Filters carparks based on query parameters.
+    *   **Query Parameters:**
+        *   `free` (boolean, optional): Set to `true` to find carparks that offer free parking.
+        *   `night` (boolean, optional): Set to `true` to find carparks offering night parking.
+        *   `height` (decimal, optional): Find carparks with a gantry height greater than or equal to the specified value.
+    *   **Example Request:** `GET /api/CarPark/filter?free=true&height=2.0`
+
+### User Favorites
+
+*   **`POST /api/CarPark/favorites`**
+    *   Adds a specified carpark to a user's list of favorites.
+    *   **Query Parameters:**
+        *   `userId` (string, required): The identifier for the user.
+        *   `carParkNo` (string, required): The unique number of the carpark to favorite.
+    *   **Example Request:** `POST /api/CarPark/favorites?userId=testuser&carParkNo=ACB`
